@@ -262,16 +262,19 @@
   border-top: 1px solid rgba(120,194,94,0.12);
   position: relative;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Info panels (overview / prevention / damage) ────────── */
 .pc-panel {
   display: none;
-  height: 100%;
+  flex: 1;
   overflow-y: auto;
   padding: 24px 26px;
   scrollbar-width: thin;
   scrollbar-color: var(--moss) transparent;
+  min-height: 0;
 }
 .pc-panel.active { display: block; }
 
@@ -311,8 +314,10 @@
 /* ── Chat panel ──────────────────────────────────────────── */
 #pc-panel-chat {
   display: none;
-  height: 100%;
+  flex: 1;
   flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
 }
 #pc-panel-chat.active { display: flex; }
 
@@ -804,7 +809,14 @@
             for (const line of lines) {
               if (!line.startsWith('data: ')) continue;
               const chunk = line.slice(6);
-              if (chunk === '[DONE]') return;
+              if (chunk.trim() === '[DONE]') {
+  state.chatHistory.push({ role: 'assistant', content: accumulated });
+  bubble.innerHTML = marked.parse(accumulated);
+  state.streaming = false;
+  document.getElementById('pc-send-btn').disabled = false;
+  this._scrollMessages();
+  return;
+}
               if (chunk.startsWith('[ERROR]')) {
                 bubble.innerHTML = `<span style="color:var(--rust)">${chunk}</span>`;
                 state.streaming = false;
