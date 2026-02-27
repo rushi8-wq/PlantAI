@@ -11,6 +11,7 @@ from PIL import Image
 import tensorflow as tf
 from groq import Groq
 from dotenv import load_dotenv
+import requests
 
 # Import the enhanced report generator
 from report_generator import generate_enhanced_report
@@ -172,6 +173,45 @@ def about(): return render_template('about.html')
 @app.route('/upload')
 def upload(): return render_template('upload.html')
 
+def get_live_risk(pathogen_type, location="Hyderabad"):
+    """
+    Fetches live weather and calculates risk based on pathogen type.
+    """
+    # Open-Meteo API (No Key Required) - Fetching Temp and Humidity
+    url = "https://api.open-meteo.com/v1/forecast?latitude=17.3850&longitude=78.4867&current=temperature_2m,relative_humidity_2m"
+    
+    try:
+        response = requests.get(url).json()
+        temp = response['current']['temperature_2m']
+        humidity = response['current']['relative_humidity_2m']
+        
+        # Risk Calculation Logic
+        risk_score = "MODERATE"
+        reason = "Standard environmental conditions."
+        
+        if "Fungal" in pathogen_type:
+            if humidity > 80:
+                risk_score = "CRITICAL"
+                reason = "High humidity detected. Fungal spores spread 3x faster in these conditions."
+            elif humidity > 60:
+                risk_score = "HIGH"
+                reason = "Elevated humidity favors fungal colonization."
+        
+        elif "Bacterial" in pathogen_type:
+            if temp > 30:
+                risk_score = "HIGH"
+                reason = "High temperatures accelerate bacterial multiplication."
+                
+        return {
+            "temp": temp,
+            "humidity": humidity,
+            "risk_score": risk_score,
+            "reason": reason
+        }
+    except Exception as e:
+        print(f"Weather API Error: {e}")
+        return None
+
 @app.route('/predict', methods=['POST'])
 def predict():
     if 'file' not in request.files: return jsonify({'error': 'No file'}), 400
@@ -182,6 +222,8 @@ def predict():
         file.save(filepath)
         try:
             prediction = predict_image(filepath)
+            weather_data = get_live_risk(prediction['pathogen_category'])
+            prediction['weather_risk'] = weather_data
             static_filename = f"upload_{secrets.token_hex(8)}.jpg"
             static_path = os.path.join(app.config['STATIC_FOLDER'], static_filename)
             with Image.open(filepath) as img:
