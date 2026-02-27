@@ -249,10 +249,11 @@ def report():
     
     # Ask AI for data - specifically requesting strings
     scientific_query = (
-    f"As a Senior Plant Pathologist, provide a research-grade JSON for {prediction['plant_type']} infected with {prediction['condition']}. "
-    f"Include: 'pathogen_name' (Latin name), 'taxonomy' (list of Rank:Name strings), "
-    f"'mechanism' (2-3 sentences on how it infects), 'organic_protocol' (specific dosages), "
-    f"'chemical_protocol' (specific fungicides and dosages), 'spread_pattern' (how it travels)."
+    f"Provide a research-grade analysis for {prediction['condition']} on {prediction['plant_type']}. "
+    "Return ONLY a JSON object. "
+    "For the 'taxonomy' key, you MUST provide a list of exactly 5 strings in 'Rank: Name' format "
+    "(e.g., ['Kingdom: Fungi', 'Division: Basidiomycota', 'Class: Pucciniomycetes', 'Order: Pucciniales', 'Family: Pucciniaceae']). "
+    "Include detailed 'mechanism', 'organic_protocol', and 'chemical_protocol' (at least 30 words each)."
 )
     
     try:
